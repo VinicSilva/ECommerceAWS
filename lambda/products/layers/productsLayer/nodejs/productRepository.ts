@@ -6,6 +6,7 @@ export interface Product {
     code: string;
     price: number;
     model: string;
+    productUrl: string;
 }
 
 export class ProductRepository {
@@ -60,5 +61,26 @@ export class ProductRepository {
         } else {
             throw new Error("Product not found")
         }
+    }
+
+    async updateProduct(productId: string, product: Product): Promise<Product> {
+        const data = await this.ddbClient.update({
+            TableName: this.productsDdb,
+            Key: {
+                id: productId
+            },
+            ConditionExpression: "attribute_exists(id)",
+            ReturnValues: "UPDATED_NEW",
+            UpdateExpression: "set productName = :n, code = :c, price = :p, model = :m, productUrl = :u",
+            ExpressionAttributeValues: {
+                ":n": product.productName,
+                ":c": product.code,
+                ":p": product.price,
+                ":m": product.model,
+                ":u": product.productUrl
+            }
+        }).promise();
+        data.Attributes!.id = product.id
+        return data.Attributes as Product;
     }
 }
